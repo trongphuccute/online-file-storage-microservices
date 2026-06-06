@@ -41,6 +41,26 @@ Header:
 Authorization: Bearer <access_token>
 ```
 
+### Logout
+
+`POST /auth/logout/`
+
+Header:
+
+```text
+Authorization: Bearer <access_token>
+```
+
+Body:
+
+```json
+{
+  "refresh": "<refresh_token>"
+}
+```
+
+Response: `200 OK`
+
 ## File Service
 
 Base URL local: `http://localhost:8002/api`

@@ -1,6 +1,8 @@
 from rest_framework import permissions, status
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
+from rest_framework_simplejwt.exceptions import TokenError
+from rest_framework_simplejwt.tokens import RefreshToken
 
 from .serializers import RegisterSerializer, UserSerializer
 
@@ -23,3 +25,26 @@ def register(request):
 @api_view(["GET"])
 def profile(request):
     return Response(UserSerializer(request.user).data)
+
+
+@api_view(["POST"])
+def logout(request):
+    """
+    Nhận refresh token, đưa vào blacklist để vô hiệu hoá.
+    Body: { "refresh": "<refresh_token>" }
+    """
+    refresh_token = request.data.get("refresh")
+    if not refresh_token:
+        return Response(
+            {"detail": "Refresh token is required."},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+    try:
+        token = RefreshToken(refresh_token)
+        token.blacklist()
+    except TokenError:
+        return Response(
+            {"detail": "Token is invalid or already blacklisted."},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+    return Response({"detail": "Successfully logged out."}, status=status.HTTP_200_OK)
