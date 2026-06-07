@@ -3,8 +3,13 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 from rest_framework_simplejwt.exceptions import TokenError
 from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework_simplejwt.views import TokenObtainPairView
 
-from .serializers import RegisterSerializer, UserSerializer
+from .serializers import (
+    ChangePasswordSerializer,
+    RegisterSerializer,
+    UserSerializer,
+)
 
 
 @api_view(["GET"])
@@ -19,7 +24,17 @@ def register(request):
     serializer = RegisterSerializer(data=request.data)
     serializer.is_valid(raise_exception=True)
     user = serializer.save()
-    return Response(UserSerializer(user).data, status=status.HTTP_201_CREATED)
+
+    # Trả về JWT token ngay sau khi register, frontend không cần login lại
+    refresh = RefreshToken.for_user(user)
+    return Response(
+        {
+            "user": UserSerializer(user).data,
+            "access": str(refresh.access_token),
+            "refresh": str(refresh),
+        },
+        status=status.HTTP_201_CREATED,
+    )
 
 
 @api_view(["GET"])
@@ -48,3 +63,36 @@ def logout(request):
             status=status.HTTP_400_BAD_REQUEST,
         )
     return Response({"detail": "Successfully logged out."}, status=status.HTTP_200_OK)
+
+
+@api_view(["POST"])
+def change_password(request):
+    """
+    Đổi mật khẩu khi đã đăng nhập.
+    Body: { "old_password": "...", "new_password": "..." }
+    """
+    serializer = ChangePasswordSerializer(
+        data=request.data, context={"request": request}
+    )
+    serializer.is_valid(raise_exception=True)
+    request.user.set_password(serializer.validated_data["new_password"])
+    request.user.save()
+    return Response({"detail": "Password changed successfully."}, status=status.HTTP_200_OK)
+
+
+class CustomTokenObtainPairView(TokenObtainPairView):
+    """Login view trả thêm username và email vào response."""
+
+    def post(self, request, *args, **kwargs):
+        response = super().post(request, *args, **kwargs)
+        if response.status_code == 200:
+            from django.contrib.auth.models import User
+            username = request.data.get("username", "")
+            try:
+                user = User.objects.get(username=username)
+                response.data["username"] = user.username
+                response.data["email"] = user.email
+                response.data["user_id"] = user.id
+            except User.DoesNotExist:
+                pass
+        return response
