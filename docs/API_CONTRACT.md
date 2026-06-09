@@ -65,6 +65,10 @@ file: <binary>
 
 `DELETE /files/<file_id>/`
 
+### Download file
+
+`GET /files/<file_id>/download/`
+
 ### Quota
 
 `GET /quota/`
