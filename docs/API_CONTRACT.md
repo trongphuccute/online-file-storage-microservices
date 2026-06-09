@@ -18,6 +18,16 @@ Base URL local: `http://localhost:8001/api`
 }
 ```
 
+Response trả về JWT token luôn, không cần login lại:
+
+```json
+{
+  "user": { "id": 1, "username": "demo", "email": "demo@example.com", "date_joined": "..." },
+  "access": "<access_token>",
+  "refresh": "<refresh_token>"
+}
+```
+
 ### Login
 
 `POST /auth/login/`
@@ -29,7 +39,17 @@ Base URL local: `http://localhost:8001/api`
 }
 ```
 
-Response co `access` va `refresh`.
+Response:
+
+```json
+{
+  "access": "<access_token>",
+  "refresh": "<refresh_token>",
+  "username": "demo",
+  "email": "demo@example.com",
+  "user_id": 1
+}
+```
 
 ### Profile
 
@@ -40,6 +60,47 @@ Header:
 ```text
 Authorization: Bearer <access_token>
 ```
+
+### Logout
+
+`POST /auth/logout/`
+
+Header:
+
+```text
+Authorization: Bearer <access_token>
+```
+
+Body:
+
+```json
+{
+  "refresh": "<refresh_token>"
+}
+```
+
+Response: `200 OK`
+
+### Change Password
+
+`POST /auth/change-password/`
+
+Header:
+
+```text
+Authorization: Bearer <access_token>
+```
+
+Body:
+
+```json
+{
+  "old_password": "password123",
+  "new_password": "newpassword456"
+}
+```
+
+Response: `200 OK`
 
 ## File Service
 
