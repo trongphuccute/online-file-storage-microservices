@@ -84,3 +84,9 @@ REST_FRAMEWORK = {
     ),
     "DEFAULT_PERMISSION_CLASSES": ("rest_framework.permissions.IsAuthenticated",),
 }
+
+# Dùng cùng JWT_SECRET với auth-service để verify token
+SIMPLE_JWT = {
+    "SIGNING_KEY": os.getenv("JWT_SECRET", SECRET_KEY),
+    "ALGORITHM": "HS256",
+}

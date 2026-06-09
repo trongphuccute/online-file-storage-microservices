@@ -21,7 +21,7 @@ def health(request):
 @api_view(["GET"])
 def list_files(request):
     files = StoredFile.objects.filter(owner_id=request.user.id)
-    return Response(StoredFileSerializer(files, many=True).data)
+    return Response(StoredFileSerializer(files, many=True, context={"request": request}).data)
 
 
 @api_view(["POST"])
@@ -50,17 +50,30 @@ def upload_file(request):
         content_type=uploaded.content_type or "",
         size=uploaded.size,
     )
-    return Response(StoredFileSerializer(item).data, status=status.HTTP_201_CREATED)
+    return Response(StoredFileSerializer(item, context={"request": request}).data, status=status.HTTP_201_CREATED)
 
 
-@api_view(["DELETE"])
-def delete_file(request, file_id):
-    item = StoredFile.objects.filter(id=file_id, owner_id=request.user.id).first()
-    if not item:
-        return Response(status=status.HTTP_404_NOT_FOUND)
-    delete_blob(item.blob_name)
-    item.delete()
-    return Response(status=status.HTTP_204_NO_CONTENT)
+@api_view(["GET", "DELETE"])
+@permission_classes([permissions.AllowAny])
+def file_detail(request, file_id):
+    if request.method == "GET":
+        item = StoredFile.objects.filter(id=file_id).first()
+        if not item:
+            return Response(status=status.HTTP_404_NOT_FOUND)
+        return Response(StoredFileSerializer(item, context={"request": request}).data)
+
+    elif request.method == "DELETE":
+        if not request.user or not request.user.is_authenticated:
+            return Response(
+                {"detail": "Authentication credentials were not provided."},
+                status=status.HTTP_401_UNAUTHORIZED,
+            )
+        item = StoredFile.objects.filter(id=file_id, owner_id=request.user.id).first()
+        if not item:
+            return Response(status=status.HTTP_404_NOT_FOUND)
+        delete_blob(item.blob_name)
+        item.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 @api_view(["GET"])
