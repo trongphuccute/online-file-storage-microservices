@@ -1,0 +1,11 @@
+{
+  "yaml.schemas": {
+    "file:///c%3A/Users/LENOVO/.vscode/extensions/continue.continue-1.2.22-win32-x64/config-yaml-schema.json": [
+      ".continue/**/*.yaml"
+    ],
+    "file:///c%3A/Users/LENOVO/.vscode/extensions/continue.continue-1.3.38-win32-x64/config-yaml-schema.json": [
+      ".continue/**/*.yaml"
+    ],
+    "file:///c:/Users/LENOVO/.continue/none": "file:///c%3A/Users/LENOVO/.continue/config.yaml"
+  }
+}

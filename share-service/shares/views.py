@@ -1,3 +1,8 @@
+import logging
+import os
+from datetime import datetime
+
+import requests
 from django.utils import timezone
 from rest_framework import permissions, status
 from rest_framework.decorators import api_view, permission_classes
@@ -18,6 +23,33 @@ class ShareLinkPagination(PageNumberPagination):
     page_size_query_param = "page_size"
     max_page_size = 100
 
+logger = logging.getLogger(__name__)
+
+# Config cho integration với file-service
+FILE_SERVICE_URL = os.getenv("FILE_SERVICE_URL", "http://localhost:8002/api")
+if FILE_SERVICE_URL and not FILE_SERVICE_URL.rstrip("/").endswith("/api"):
+    FILE_SERVICE_URL = FILE_SERVICE_URL.rstrip("/") + "/api"
+
+
+
+def verify_file_exists(file_id: int, access_token: str) -> bool:
+    """
+    Verify file tồn tại ở file-service bằng cách gọi GET /files/<id>/.
+    Trả True nếu file tồn tại và thuộc về user, False nếu 404.
+    Fail gracefully nếu file-service down.
+    """
+    try:
+        response = requests.get(
+            f"{FILE_SERVICE_URL}/files/{file_id}/",
+            headers={"Authorization": f"Bearer {access_token}"},
+            timeout=5,
+        )
+        return response.status_code == 200
+    except Exception as e:
+        logger.warning(f"Error verifying file {file_id}: {str(e)}")
+        # Nếu file-service down, cho phép tạo share (fail gracefully)
+        return True
+
 
 @api_view(["GET"])
 @permission_classes([permissions.AllowAny])
@@ -32,218 +64,150 @@ def health(request):
 
 @api_view(["POST"])
 def create_share_link(request):
-    """Tạo link chia sẻ mới"""
-    serializer = CreateShareLinkSerializer(data=request.data)
-    
-    if not serializer.is_valid():
+    """Tạo public share link cho file"""
+    serializer = ShareLinkSerializer(data=request.data)
+    serializer.is_valid(raise_exception=True)
+
+    file_id = serializer.validated_data.get("file_id")
+    expires_at = serializer.validated_data.get("expires_at")
+
+    # Validate expires_at không được quá khứ
+    if expires_at and expires_at <= timezone.now():
         return Response(
-            {
-                "status": "error",
-                "message": "Dữ liệu không hợp lệ",
-                "errors": serializer.errors
-            },
-            status=status.HTTP_400_BAD_REQUEST
+            {"detail": "expires_at cannot be in the past."},
+            status=status.HTTP_400_BAD_REQUEST,
         )
-    
-    try:
-        share = serializer.save(owner_id=request.user.id)
+
+    # Verify file tồn tại
+    token = request.auth
+    if not verify_file_exists(file_id, str(token)):
         return Response(
-            {
-                "status": "success",
-                "message": "Tạo link chia sẻ thành công",
-                "data": ShareLinkSerializer(share).data
-            },
-            status=status.HTTP_201_CREATED
+            {"detail": f"File {file_id} not found or not accessible."},
+            status=status.HTTP_404_NOT_FOUND,
         )
-    except Exception as e:
-        return Response(
-            {
-                "status": "error",
-                "message": f"Lỗi tạo link chia sẻ: {str(e)}"
-            },
-            status=status.HTTP_500_INTERNAL_SERVER_ERROR
-        )
+
+    # Tạo share link
+    share = serializer.save(owner_id=request.user.id)
+    logger.info(
+        f"Share link created: {share.token} for file {file_id} by user {request.user.id}"
+    )
+    return Response(ShareLinkSerializer(share).data, status=status.HTTP_201_CREATED)
 
 
 @api_view(["GET"])
 def my_share_links(request):
-    """Lấy danh sách link chia sẻ của người dùng hiện tại"""
+    """Danh sách share link của user"""
     try:
-        # Lọc theo các tham số
-        queryset = ShareLink.objects.filter(owner_id=request.user.id)
-        
-        # Lọc theo file_id
-        file_id = request.query_params.get("file_id")
-        if file_id:
-            try:
-                queryset = queryset.filter(file_id=int(file_id))
-            except ValueError:
-                return Response(
-                    {
-                        "status": "error",
-                        "message": "file_id phải là một số"
-                    },
-                    status=status.HTTP_400_BAD_REQUEST
-                )
-        
-        # Lọc theo trạng thái hoạt động
-        is_active = request.query_params.get("is_active")
-        if is_active is not None:
-            is_active_bool = is_active.lower() in ["true", "1", "yes"]
-            queryset = queryset.filter(is_active=is_active_bool)
-        
-        # Lọc theo trạng thái hết hạn
-        show_expired = request.query_params.get("show_expired", "false")
-        if show_expired.lower() != "true":
-            queryset = queryset.filter(expires_at__isnull=True) | queryset.filter(expires_at__gt=timezone.now())
-        
-        # Sắp xếp
-        sort_by = request.query_params.get("sort_by", "-created_at")
-        if sort_by in ["-created_at", "created_at", "-access_count", "access_count"]:
-            queryset = queryset.order_by(sort_by)
-        
-        # Phân trang
-        paginator = ShareLinkPagination()
-        paginated_queryset = paginator.paginate_queryset(queryset, request)
-        
-        serializer = ShareLinkSerializer(paginated_queryset, many=True)
-        return paginator.get_paginated_response({
-            "status": "success",
-            "data": serializer.data
-        })
-        
+        links = ShareLink.objects.filter(owner_id=request.user.id).order_by("-created_at")
+        return Response(ShareLinkSerializer(links, many=True).data)
     except Exception as e:
+        logger.error(f"Error fetching share links for user {request.user.id}: {str(e)}")
         return Response(
-            {
-                "status": "error",
-                "message": f"Lỗi lấy danh sách: {str(e)}"
-            },
-            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            {"detail": "Error fetching share links."},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR,
         )
 
 
 @api_view(["GET", "PATCH", "DELETE"])
-def manage_share_link(request, token):
-    """Quản lý link chia sẻ (xem, cập nhật, xóa)"""
+def share_link_detail(request, token):
+    """Chi tiết, cập nhật, xóa share link (owner only)"""
     try:
-        share = ShareLink.objects.get(token=token)
-        
-        # Kiểm tra quyền sở hữu
-        if share.owner_id != request.user.id:
-            return Response(
-                {
-                    "status": "error",
-                    "message": "Bạn không có quyền truy cập link này"
-                },
-                status=status.HTTP_403_FORBIDDEN
-            )
-        
-        if request.method == "GET":
-            return Response({
-                "status": "success",
-                "data": ShareLinkSerializer(share).data
-            })
-        
-        elif request.method == "PATCH":
-            serializer = CreateShareLinkSerializer(
-                share,
-                data=request.data,
-                partial=True
-            )
-            if not serializer.is_valid():
-                return Response(
-                    {
-                        "status": "error",
-                        "message": "Dữ liệu không hợp lệ",
-                        "errors": serializer.errors
-                    },
-                    status=status.HTTP_400_BAD_REQUEST
-                )
-            
-            updated_share = serializer.save()
-            return Response({
-                "status": "success",
-                "message": "Cập nhật thành công",
-                "data": ShareLinkSerializer(updated_share).data
-            })
-        
-        elif request.method == "DELETE":
-            share.delete()
-            return Response({
-                "status": "success",
-                "message": "Xóa link chia sẻ thành công"
-            }, status=status.HTTP_204_NO_CONTENT)
-    
+        share = ShareLink.objects.get(token=token, owner_id=request.user.id)
     except ShareLink.DoesNotExist:
         return Response(
-            {
-                "status": "error",
-                "message": "Link chia sẻ không tồn tại"
-            },
-            status=status.HTTP_404_NOT_FOUND
+            {"detail": "Share link not found."},
+            status=status.HTTP_404_NOT_FOUND,
         )
-    except Exception as e:
-        return Response(
-            {
-                "status": "error",
-                "message": f"Lỗi: {str(e)}"
-            },
-            status=status.HTTP_500_INTERNAL_SERVER_ERROR
-        )
+
+    if request.method == "GET":
+        """Xem chi tiết share link"""
+        return Response(ShareLinkSerializer(share).data)
+
+    elif request.method == "PATCH":
+        """Cập nhật share link (toggle active, update expires_at)"""
+        # Validate expires_at nếu có
+        expires_at = request.data.get("expires_at")
+        if expires_at is not None:
+            expires_dt = (
+                datetime.fromisoformat(expires_at)
+                if isinstance(expires_at, str)
+                else expires_at
+            )
+            if expires_dt <= timezone.now():
+                return Response(
+                    {"detail": "expires_at cannot be in the past."},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+        serializer = ShareLinkSerializer(share, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+
+        logger.info(f"Share link {token} updated by user {request.user.id}")
+        return Response(serializer.data)
+
+    elif request.method == "DELETE":
+        """Xóa share link"""
+        file_id = share.file_id
+        share.delete()
+        logger.info(f"Share link {token} deleted by user {request.user.id}")
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 @api_view(["GET"])
 @permission_classes([permissions.AllowAny])
 def public_share(request, token):
-    """Truy cập link chia sẻ công khai"""
+    """Xem public share (không cần JWT)"""
     try:
-        share = ShareLink.objects.get(token=token)
-        
-        # Kiểm tra có thể truy cập không
-        can_access, message = share.can_access()
-        
-        if not can_access:
-            if share.is_expired():
-                return Response(
-                    {
-                        "status": "error",
-                        "message": message,
-                        "code": "LINK_EXPIRED"
-                    },
-                    status=status.HTTP_410_GONE
-                )
-            else:
-                return Response(
-                    {
-                        "status": "error",
-                        "message": message,
-                        "code": "LINK_INACTIVE"
-                    },
-                    status=status.HTTP_403_FORBIDDEN
-                )
-        
-        # Tăng bộ đếm truy cập
-        share.increment_access_count()
-        
-        return Response({
-            "status": "success",
-            "data": ShareLinkDetailSerializer(share).data
-        })
-    
+        share = ShareLink.objects.get(token=token, is_active=True)
     except ShareLink.DoesNotExist:
         return Response(
-            {
-                "status": "error",
-                "message": "Link chia sẻ không tồn tại",
-                "code": "NOT_FOUND"
-            },
-            status=status.HTTP_404_NOT_FOUND
+            {"detail": "Share link not found or inactive."},
+            status=status.HTTP_404_NOT_FOUND,
         )
-    except Exception as e:
+
+    # Check nếu share link hết hạn
+    if share.expires_at and share.expires_at <= timezone.now():
+        logger.info(f"Access to expired share link: {token}")
         return Response(
-            {
-                "status": "error",
-                "message": f"Lỗi: {str(e)}"
-            },
-            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            {"detail": "Share link expired."},
+            status=status.HTTP_410_GONE,
         )
+
+    # Call file-service to fetch file details
+    file_info = {}
+    try:
+        response = requests.get(f"{FILE_SERVICE_URL}/files/{share.file_id}/", timeout=5)
+        if response.status_code == 200:
+            file_info = response.json()
+        else:
+            logger.warning(f"File service returned status {response.status_code} for file {share.file_id}")
+    except Exception as e:
+        logger.error(f"Error fetching file details from file-service for file {share.file_id}: {str(e)}")
+
+    logger.info(f"Public share accessed: {token}")
+    data = ShareLinkSerializer(share).data
+    data["file_info"] = file_info
+    return Response(data)
+@api_view(["GET"])
+@permission_classes([permissions.AllowAny])
+def public_download(request, token):
+    try:
+        share = ShareLink.objects.get(token=token, is_active=True)
+    except ShareLink.DoesNotExist:
+        return Response(
+            {"detail": "Share link not found."},
+            status=status.HTTP_404_NOT_FOUND,
+        )
+
+    if share.expires_at and share.expires_at <= timezone.now():
+        return Response(
+            {"detail": "Share link expired."},
+            status=status.HTTP_410_GONE,
+        )
+
+    return Response({
+        "message": "Download endpoint",
+        "file_id": share.file_id,
+        "token": str(share.token),
+    })

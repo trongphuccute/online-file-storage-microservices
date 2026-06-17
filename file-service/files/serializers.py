@@ -22,6 +22,7 @@ class StoredFileSerializer(serializers.ModelSerializer):
         required=False,
         allow_null=True,
     )
+    url = serializers.SerializerMethodField()
 
     class Meta:
         model = StoredFile
@@ -35,6 +36,7 @@ class StoredFileSerializer(serializers.ModelSerializer):
             "size",
             "created_at",
             "album_id",
+            "url",
         ]
         read_only_fields = [
             "id",
@@ -45,3 +47,34 @@ class StoredFileSerializer(serializers.ModelSerializer):
             "size",
             "created_at",
         ]
+
+    def get_url(self, obj):
+        from django.conf import settings
+        if getattr(settings, "AZURE_STORAGE_CONNECTION_STRING", ""):
+            try:
+                from azure.storage.blob import generate_blob_sas, BlobSasPermissions
+                from datetime import datetime, timedelta, timezone
+
+                conn_params = {}
+                for param in settings.AZURE_STORAGE_CONNECTION_STRING.split(';'):
+                    if '=' in param:
+                        k, v = param.split('=', 1)
+                        conn_params[k.strip()] = v.strip()
+
+                account_name = conn_params.get("AccountName")
+                account_key = conn_params.get("AccountKey")
+
+                if account_name and account_key:
+                    sas_token = generate_blob_sas(
+                        account_name=account_name,
+                        container_name=settings.AZURE_STORAGE_CONTAINER,
+                        blob_name=obj.blob_name,
+                        account_key=account_key,
+                        permission=BlobSasPermissions(read=True),
+                        expiry=datetime.now(timezone.utc) + timedelta(hours=1)
+                    )
+                    return f"https://{account_name}.blob.core.windows.net/{settings.AZURE_STORAGE_CONTAINER}/{obj.blob_name}?{sas_token}"
+            except Exception as e:
+                print("Error generating SAS URL:", str(e))
+
+        return f"/api/files/{obj.id}/download/"

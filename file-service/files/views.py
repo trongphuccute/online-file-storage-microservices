@@ -344,6 +344,19 @@ def thumbnail_file(request, file_id):
 # Delete
 # ---------------------------------------------------------------------------
 
+@api_view(["GET"])
+def file_detail(request, file_id):
+    """
+    GET /files/<id>/ — trả metadata của 1 file.
+    Dùng bởi share-service để verify file tồn tại.
+    Chỉ owner mới xem được (JWT required).
+    """
+    item = StoredFile.objects.filter(id=file_id, owner_id=request.user.id).first()
+    if not item:
+        return Response(status=status.HTTP_404_NOT_FOUND)
+    return Response(StoredFileSerializer(item).data)
+
+
 @api_view(["DELETE"])
 def delete_file(request, file_id):
     item = StoredFile.objects.filter(id=file_id, owner_id=request.user.id).first()
@@ -362,8 +375,6 @@ def delete_file(request, file_id):
     )
 
     return Response(status=status.HTTP_204_NO_CONTENT)
-
-
 # ---------------------------------------------------------------------------
 # Rename
 # ---------------------------------------------------------------------------

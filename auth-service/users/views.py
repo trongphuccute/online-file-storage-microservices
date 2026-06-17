@@ -18,17 +18,49 @@ def health(request):
     return Response({"service": "auth-service", "status": "ok"})
 
 
+from rest_framework.decorators import throttle_classes
+from rest_framework.throttling import AnonRateThrottle
+
+class RegisterThrottle(AnonRateThrottle):
+    scope = 'register'
+
 @api_view(["POST"])
 @permission_classes([permissions.AllowAny])
+@throttle_classes([RegisterThrottle])
 def register(request):
-    serializer = RegisterSerializer(data=request.data)
-    serializer.is_valid(raise_exception=True)
+    # Sanitize and trim request data
+    data = {}
+    for key, value in request.data.items():
+        if isinstance(value, str):
+            data[key] = value.strip()
+        else:
+            data[key] = value
+
+    serializer = RegisterSerializer(data=data)
+    if not serializer.is_valid():
+        # Get first error message for descriptive message
+        error_msg = "Validation failed."
+        if serializer.errors:
+            first_field = next(iter(serializer.errors))
+            first_err = serializer.errors[first_field]
+            error_msg = first_err[0] if isinstance(first_err, list) else str(first_err)
+            
+        return Response(
+            {
+                "success": False,
+                "message": error_msg,
+                "errors": serializer.errors
+            },
+            status=status.HTTP_400_BAD_REQUEST
+        )
+
     user = serializer.save()
 
     # Trả về JWT token ngay sau khi register, frontend không cần login lại
     refresh = RefreshToken.for_user(user)
     return Response(
         {
+            "success": True,
             "user": UserSerializer(user).data,
             "access": str(refresh.access_token),
             "refresh": str(refresh),

@@ -9,12 +9,47 @@ class RegisterSerializer(serializers.ModelSerializer):
         model = User
         fields = ["id", "username", "email", "password"]
 
+    def validate_username(self, value):
+        value = (value or "").strip()
+        if len(value) < 4 or len(value) > 30:
+            raise serializers.ValidationError("Username must be between 4 and 30 characters.")
+        import re
+        if not re.match(r"^[a-zA-Z0-9_.-]+$", value):
+            raise serializers.ValidationError("Username can only contain letters, numbers, underscores, dots, and hyphens.")
+        if User.objects.filter(username__iexact=value).exists():
+            raise serializers.ValidationError("Username is already taken.")
+        return value
+
     def validate_email(self, value):
+        value = (value or "").strip().lower()
         if not value:
             raise serializers.ValidationError("Email is required.")
+        
+        # RFC standard validation via Django's validator
+        from django.core.validators import validate_email
+        from django.core.exceptions import ValidationError
+        try:
+            validate_email(value)
+        except ValidationError:
+            raise serializers.ValidationError("Invalid email address format.")
+
         if User.objects.filter(email__iexact=value).exists():
             raise serializers.ValidationError("This email is already in use.")
-        return value.lower()
+        return value
+
+    def validate_password(self, value):
+        if len(value) < 8:
+            raise serializers.ValidationError("Password must be at least 8 characters long.")
+        import re
+        if not re.search(r"[A-Z]", value):
+            raise serializers.ValidationError("Password must contain at least one uppercase letter.")
+        if not re.search(r"[a-z]", value):
+            raise serializers.ValidationError("Password must contain at least one lowercase letter.")
+        if not re.search(r"[0-9]", value):
+            raise serializers.ValidationError("Password must contain at least one number.")
+        if not re.search(r"[!@#$%^&*(),.?\":{}|<>]", value):
+            raise serializers.ValidationError("Password must contain at least one special character.")
+        return value
 
     def create(self, validated_data):
         return User.objects.create_user(**validated_data)

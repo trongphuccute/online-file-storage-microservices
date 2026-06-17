@@ -84,7 +84,7 @@ CORS_ALLOW_ALL_ORIGINS = DEBUG and not CORS_ALLOWED_ORIGINS
 
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": (
-        "rest_framework_simplejwt.authentication.JWTAuthentication",
+        "files.authentication.JWTAuthenticationFromPayload",
     ),
     "DEFAULT_PERMISSION_CLASSES": ("rest_framework.permissions.IsAuthenticated",),
 }
@@ -94,3 +94,13 @@ AZURE_STORAGE_CONTAINER = os.getenv("AZURE_STORAGE_CONTAINER", "uploads")
 DEFAULT_USER_QUOTA_BYTES = 1024 * 1024 * 1024
 MAX_UPLOAD_FILE_BYTES = int(os.getenv("MAX_UPLOAD_FILE_BYTES", 50 * 1024 * 1024))
 MEDIA_ROOT = BASE_DIR / "media"
+
+# JWT — dùng cùng SECRET_KEY với auth-service để verify token
+# auth-service set SIGNING_KEY = SECRET_KEY nên file-service phải dùng cùng key
+from datetime import timedelta
+SIMPLE_JWT = {
+    "SIGNING_KEY": SECRET_KEY,
+    "ALGORITHM": "HS256",
+    "AUTH_HEADER_TYPES": ("Bearer",),
+    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=60),
+}

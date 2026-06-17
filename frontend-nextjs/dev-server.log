@@ -1,0 +1,116 @@
+
+> cloudvault-frontend@0.1.0 dev
+> next dev
+
+  ▲ Next.js 14.2.15
+  - Local:        http://localhost:3000
+
+ ✓ Starting...
+ ✓ Ready in 4.4s
+ ○ Compiling / ...
+ ✓ Compiled / in 10.6s (778 modules)
+Do not add stylesheets using next/head (see <link rel="stylesheet"> tag with href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"). Use Document instead. 
+See more info here: https://nextjs.org/docs/messages/no-stylesheets-in-head-component
+ GET / 200 in 12855ms
+ ✓ Compiled in 771ms (285 modules)
+ ✓ Compiled / in 440ms (778 modules)
+ GET / 200 in 714ms
+ GET / 200 in 26ms
+ GET / 200 in 19ms
+ ○ Compiling /_error ...
+ ✓ Compiled /_error in 697ms (780 modules)
+ GET / 404 in 748ms
+ GET / 404 in 39ms
+ GET / 200 in 218ms
+ GET / 200 in 58ms
+ GET /_next/static/webpack/f69ffe701c42a70f.webpack.hot-update.json 404 in 54ms
+ ⚠ Fast Refresh had to perform a full reload. Read more: https://nextjs.org/docs/messages/fast-refresh-reload
+ GET / 200 in 63ms
+ GET /_next/static/webpack/f69ffe701c42a70f.webpack.hot-update.json 404 in 27ms
+ ⚠ Fast Refresh had to perform a full reload. Read more: https://nextjs.org/docs/messages/fast-refresh-reload
+ GET / 200 in 60ms
+ GET /_next/static/webpack/f69ffe701c42a70f.webpack.hot-update.json 404 in 23ms
+ ⚠ Fast Refresh had to perform a full reload. Read more: https://nextjs.org/docs/messages/fast-refresh-reload
+ GET / 200 in 48ms
+ GET /_next/static/webpack/f69ffe701c42a70f.webpack.hot-update.json 404 in 29ms
+ ⚠ Fast Refresh had to perform a full reload. Read more: https://nextjs.org/docs/messages/fast-refresh-reload
+ GET / 200 in 48ms
+ GET /_next/static/webpack/f69ffe701c42a70f.webpack.hot-update.json 404 in 26ms
+ ⚠ Fast Refresh had to perform a full reload. Read more: https://nextjs.org/docs/messages/fast-refresh-reload
+ GET / 200 in 48ms
+ GET /_next/static/webpack/f69ffe701c42a70f.webpack.hot-update.json 404 in 22ms
+ ⚠ Fast Refresh had to perform a full reload. Read more: https://nextjs.org/docs/messages/fast-refresh-reload
+ GET / 200 in 50ms
+ GET /_next/static/webpack/f69ffe701c42a70f.webpack.hot-update.json 404 in 17ms
+ ⚠ Fast Refresh had to perform a full reload. Read more: https://nextjs.org/docs/messages/fast-refresh-reload
+ GET / 200 in 47ms
+ GET /_next/static/webpack/f69ffe701c42a70f.webpack.hot-update.json 404 in 19ms
+ ⚠ Fast Refresh had to perform a full reload. Read more: https://nextjs.org/docs/messages/fast-refresh-reload
+ GET / 200 in 76ms
+ GET /_next/static/webpack/f69ffe701c42a70f.webpack.hot-update.json 404 in 20ms
+ ⚠ Fast Refresh had to perform a full reload. Read more: https://nextjs.org/docs/messages/fast-refresh-reload
+ GET / 200 in 53ms
+ GET /_next/static/webpack/f69ffe701c42a70f.webpack.hot-update.json 404 in 23ms
+ ⚠ Fast Refresh had to perform a full reload. Read more: https://nextjs.org/docs/messages/fast-refresh-reload
+ GET / 200 in 47ms
+ GET /_next/static/webpack/f69ffe701c42a70f.webpack.hot-update.json 404 in 22ms
+ ⚠ Fast Refresh had to perform a full reload. Read more: https://nextjs.org/docs/messages/fast-refresh-reload
+ GET / 200 in 52ms
+ GET /_next/static/webpack/f69ffe701c42a70f.webpack.hot-update.json 404 in 23ms
+ ⚠ Fast Refresh had to perform a full reload. Read more: https://nextjs.org/docs/messages/fast-refresh-reload
+ GET / 200 in 46ms
+ GET /_next/static/webpack/f69ffe701c42a70f.webpack.hot-update.json 404 in 22ms
+ ⚠ Fast Refresh had to perform a full reload. Read more: https://nextjs.org/docs/messages/fast-refresh-reload
+ GET / 200 in 41ms
+ GET /_next/static/webpack/f69ffe701c42a70f.webpack.hot-update.json 404 in 15ms
+ ⚠ Fast Refresh had to perform a full reload. Read more: https://nextjs.org/docs/messages/fast-refresh-reload
+ GET / 200 in 43ms
+ GET /_next/static/webpack/f69ffe701c42a70f.webpack.hot-update.json 404 in 17ms
+ ⚠ Fast Refresh had to perform a full reload. Read more: https://nextjs.org/docs/messages/fast-refresh-reload
+ GET / 200 in 42ms
+ GET /_next/static/webpack/f69ffe701c42a70f.webpack.hot-update.json 404 in 18ms
+ ⚠ Fast Refresh had to perform a full reload. Read more: https://nextjs.org/docs/messages/fast-refresh-reload
+ GET / 200 in 49ms
+ GET /_next/static/webpack/f69ffe701c42a70f.webpack.hot-update.json 404 in 15ms
+ ⚠ Fast Refresh had to perform a full reload. Read more: https://nextjs.org/docs/messages/fast-refresh-reload
+ GET / 200 in 33ms
+ GET /_next/static/webpack/f69ffe701c42a70f.webpack.hot-update.json 404 in 17ms
+ ⚠ Fast Refresh had to perform a full reload. Read more: https://nextjs.org/docs/messages/fast-refresh-reload
+ GET / 200 in 52ms
+ GET /_next/static/webpack/f69ffe701c42a70f.webpack.hot-update.json 404 in 20ms
+ ⚠ Fast Refresh had to perform a full reload. Read more: https://nextjs.org/docs/messages/fast-refresh-reload
+ GET / 200 in 38ms
+ GET /_next/static/webpack/f69ffe701c42a70f.webpack.hot-update.json 404 in 23ms
+ ⚠ Fast Refresh had to perform a full reload. Read more: https://nextjs.org/docs/messages/fast-refresh-reload
+ GET / 200 in 39ms
+ GET /_next/static/webpack/f69ffe701c42a70f.webpack.hot-update.json 404 in 18ms
+ ⚠ Fast Refresh had to perform a full reload. Read more: https://nextjs.org/docs/messages/fast-refresh-reload
+ GET / 200 in 46ms
+ GET /_next/static/webpack/f69ffe701c42a70f.webpack.hot-update.json 404 in 27ms
+ ⚠ Fast Refresh had to perform a full reload. Read more: https://nextjs.org/docs/messages/fast-refresh-reload
+ GET / 200 in 43ms
+ GET /_next/static/webpack/f69ffe701c42a70f.webpack.hot-update.json 404 in 22ms
+ ⚠ Fast Refresh had to perform a full reload. Read more: https://nextjs.org/docs/messages/fast-refresh-reload
+ GET / 200 in 38ms
+ GET /_next/static/webpack/f69ffe701c42a70f.webpack.hot-update.json 404 in 16ms
+ ⚠ Fast Refresh had to perform a full reload. Read more: https://nextjs.org/docs/messages/fast-refresh-reload
+ GET / 200 in 36ms
+ GET /_next/static/webpack/f69ffe701c42a70f.webpack.hot-update.json 404 in 21ms
+ ⚠ Fast Refresh had to perform a full reload. Read more: https://nextjs.org/docs/messages/fast-refresh-reload
+ GET / 200 in 45ms
+ GET /_next/static/webpack/f69ffe701c42a70f.webpack.hot-update.json 404 in 20ms
+ ⚠ Fast Refresh had to perform a full reload. Read more: https://nextjs.org/docs/messages/fast-refresh-reload
+ GET / 200 in 35ms
+ GET /_next/static/webpack/f69ffe701c42a70f.webpack.hot-update.json 404 in 23ms
+ ⚠ Fast Refresh had to perform a full reload. Read more: https://nextjs.org/docs/messages/fast-refresh-reload
+ GET / 200 in 42ms
+ GET /_next/static/webpack/f69ffe701c42a70f.webpack.hot-update.json 404 in 19ms
+ ⚠ Fast Refresh had to perform a full reload. Read more: https://nextjs.org/docs/messages/fast-refresh-reload
+ GET / 200 in 44ms
+ GET /_next/static/webpack/f69ffe701c42a70f.webpack.hot-update.json 404 in 23ms
+ ⚠ Fast Refresh had to perform a full reload. Read more: https://nextjs.org/docs/messages/fast-refresh-reload
+ GET / 200 in 36ms
+ GET /_next/static/webpack/f69ffe701c42a70f.webpack.hot-update.json 404 in 19ms
+ ⚠ Fast Refresh had to perform a full reload. Read more: https://nextjs.org/docs/messages/fast-refresh-reload
+ GET / 200 in 38ms
+[?25h

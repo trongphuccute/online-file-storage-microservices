@@ -83,7 +83,13 @@ CORS_ALLOW_ALL_ORIGINS = DEBUG and not CORS_ALLOWED_ORIGINS
 
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": (
-        "rest_framework_simplejwt.authentication.JWTAuthentication",
+        "shares.authentication.JWTAuthenticationFromPayload",
     ),
     "DEFAULT_PERMISSION_CLASSES": ("rest_framework.permissions.IsAuthenticated",),
+}
+
+# Dùng cùng JWT_SECRET với auth-service để verify token
+SIMPLE_JWT = {
+    "SIGNING_KEY": os.getenv("JWT_SECRET", SECRET_KEY),
+    "ALGORITHM": "HS256",
 }
