@@ -63,13 +63,8 @@ WSGI_APPLICATION = "file_service.wsgi.application"
 
 DATABASES = {
     "default": {
-        "ENGINE": "django.db.backends.postgresql",
-        "NAME": os.getenv("FILE_POSTGRES_DB", "file_service"),
-        "USER": os.getenv("POSTGRES_USER", "postgres"),
-        "PASSWORD": os.getenv("POSTGRES_PASSWORD", "postgres"),
-        "HOST": os.getenv("FILE_POSTGRES_HOST", "localhost"),
-        "PORT": os.getenv("POSTGRES_PORT", "5432"),
-        "OPTIONS": {"sslmode": os.getenv("POSTGRES_SSLMODE", "prefer")},
+        "ENGINE": "django.db.backends.sqlite3",
+        "NAME": BASE_DIR / "db.sqlite3",
     }
 }
 
@@ -78,19 +73,33 @@ TIME_ZONE = "UTC"
 USE_I18N = True
 USE_TZ = True
 STATIC_URL = "static/"
-MEDIA_URL = "media/"
+
+# Local file storage — no Azure required
+MEDIA_ROOT = BASE_DIR / "media"
+MEDIA_URL = "/media/"
+
+# Azure Blob disabled — empty string means blob_storage.py uses local filesystem
+AZURE_STORAGE_CONNECTION_STRING = ""
+AZURE_STORAGE_CONTAINER = "uploads"
+
+DEFAULT_USER_QUOTA_BYTES = 1024 * 1024 * 1024
+MAX_UPLOAD_FILE_BYTES = int(os.getenv("MAX_UPLOAD_FILE_BYTES", 50 * 1024 * 1024))
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 CORS_ALLOW_ALL_ORIGINS = DEBUG and not CORS_ALLOWED_ORIGINS
 
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": (
-        "rest_framework_simplejwt.authentication.JWTAuthentication",
+        "files.authentication.JWTAuthenticationFromPayload",
     ),
     "DEFAULT_PERMISSION_CLASSES": ("rest_framework.permissions.IsAuthenticated",),
 }
 
-AZURE_STORAGE_CONNECTION_STRING = os.getenv("AZURE_STORAGE_CONNECTION_STRING", "")
-AZURE_STORAGE_CONTAINER = os.getenv("AZURE_STORAGE_CONTAINER", "uploads")
-DEFAULT_USER_QUOTA_BYTES = 1024 * 1024 * 1024
-MAX_UPLOAD_FILE_BYTES = int(os.getenv("MAX_UPLOAD_FILE_BYTES", 50 * 1024 * 1024))
-MEDIA_ROOT = BASE_DIR / "media"
+# JWT — dùng cùng SECRET_KEY với auth-service để verify token
+# auth-service set SIGNING_KEY = SECRET_KEY nên file-service phải dùng cùng key
+from datetime import timedelta
+SIMPLE_JWT = {
+    "SIGNING_KEY": SECRET_KEY,
+    "ALGORITHM": "HS256",
+    "AUTH_HEADER_TYPES": ("Bearer",),
+    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=60),
+}

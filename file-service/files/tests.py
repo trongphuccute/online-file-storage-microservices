@@ -259,6 +259,34 @@ class DownloadTest(TestCase):
         self.assertEqual(r.status_code, 404)
 
 
+class PublicFileTest(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user("alice", password="pw")
+        self.photo = StoredFile.objects.create(
+            owner_id=self.user.id,
+            original_name="cat.jpg",
+            blob_name="1/cat.jpg",
+            content_type="image/jpeg",
+            size=1000,
+        )
+
+    def test_public_file_meta_returns_url_and_metadata(self):
+        r = self.client.get(f"/api/files/{self.photo.id}/public/")
+        self.assertEqual(r.status_code, 200)
+        data = r.json()
+        self.assertEqual(data["name"], "cat.jpg")
+        self.assertEqual(data["type"], "image/jpeg")
+        self.assertEqual(data["size"], 1000)
+        self.assertIn("/files/1/cat.jpg", data["url"])
+
+    @patch("files.views.open_blob", return_value=io.BytesIO(b"image-bytes"))
+    def test_public_file_serves_inline_content(self, mock_open):
+        r = self.client.get("/files/1/cat.jpg")
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(r["Content-Type"], "image/jpeg")
+        self.assertIn("inline", r["Content-Disposition"])
+
+
 # ---------------------------------------------------------------------------
 # Thumbnail
 # ---------------------------------------------------------------------------

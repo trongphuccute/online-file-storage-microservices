@@ -7,19 +7,20 @@ Handles: upload (validate + thumbnail), list (paginate + filter),
 from __future__ import annotations
 
 import io
+import mimetypes
 import os
 import uuid
 from datetime import datetime, timezone
 
 from django.conf import settings
-from django.db.models import F, Q
-from django.http import StreamingHttpResponse
+from django.db.models import Count, F, Q, Sum
+from django.http import FileResponse, StreamingHttpResponse
 from rest_framework import permissions, status
 from rest_framework.decorators import api_view, permission_classes, parser_classes
 from rest_framework.parsers import MultiPartParser
 from rest_framework.response import Response
 
-from .blob_storage import delete_blob, iter_blob, upload_blob
+from .blob_storage import delete_blob, iter_blob, open_blob, upload_blob
 from .models import Album, StoredFile, UserQuota
 from .serializers import AlbumSerializer, StoredFileSerializer
 
@@ -152,6 +153,26 @@ def _paginate(queryset, request):
     }
 
 
+def _is_admin(user) -> bool:
+    return getattr(user, "role", "user") == "admin" or getattr(user, "is_staff", False)
+
+
+def _content_type(item: StoredFile) -> str:
+    return item.content_type or mimetypes.guess_type(item.original_name)[0] or "application/octet-stream"
+
+
+def _public_file_payload(item: StoredFile, request) -> dict:
+    serializer = StoredFileSerializer(item, context={"request": request})
+    return {
+        "url": serializer.data["url"],
+        "downloadUrl": serializer.data["download_url"],
+        "name": item.original_name,
+        "size": item.size,
+        "type": _content_type(item),
+        "createdAt": item.created_at.isoformat(),
+    }
+
+
 # ---------------------------------------------------------------------------
 # Health
 # ---------------------------------------------------------------------------
@@ -160,6 +181,41 @@ def _paginate(queryset, request):
 @permission_classes([permissions.AllowAny])
 def health(request):
     return Response({"service": "file-service", "status": "ok"})
+
+
+@api_view(["GET"])
+def admin_users(request):
+    if not _is_admin(request.user):
+        return Response({"detail": "Admin access required."}, status=status.HTTP_403_FORBIDDEN)
+
+    # Aggregate per-user stats from StoredFile
+    file_stats = {
+        row["owner_id"]: {
+            "image_count": int(row["image_count"] or 0),
+            "storage_used": int(row["storage_used"] or 0),
+        }
+        for row in StoredFile.objects.values("owner_id").annotate(
+            image_count=Count("id"),
+            storage_used=Sum("size"),
+        )
+    }
+
+    # Collect all known user_ids: those with files + those with a quota row
+    quotas = {q.user_id: int(q.limit_bytes) for q in UserQuota.objects.all()}
+    all_user_ids = set(file_stats.keys()) | set(quotas.keys())
+
+    results = []
+    for uid in sorted(all_user_ids):
+        stats = file_stats.get(uid, {"image_count": 0, "storage_used": 0})
+        results.append(
+            {
+                "user_id": uid,
+                "image_count": stats["image_count"],
+                "storage_used": stats["storage_used"],
+                "storage_quota": quotas.get(uid, settings.DEFAULT_USER_QUOTA_BYTES),
+            }
+        )
+    return Response(results)
 
 
 # ---------------------------------------------------------------------------
@@ -213,7 +269,7 @@ def list_files(request):
     results, meta = _paginate(qs, request)
     return Response({
         **meta,
-        "results": StoredFileSerializer(results, many=True).data,
+        "results": StoredFileSerializer(results, many=True, context={"request": request}).data,
     })
 
 
@@ -292,7 +348,7 @@ def upload_file(request):
         used_bytes=F("used_bytes") + uploaded.size
     )
 
-    return Response(StoredFileSerializer(item).data, status=status.HTTP_201_CREATED)
+    return Response(StoredFileSerializer(item, context={"request": request}).data, status=status.HTTP_201_CREATED)
 
 
 # ---------------------------------------------------------------------------
@@ -307,11 +363,12 @@ def download_file(request, file_id):
 
     response = StreamingHttpResponse(
         iter_blob(item.blob_name),
-        content_type=item.content_type or "application/octet-stream",
+        content_type=_content_type(item),
     )
     response["Content-Disposition"] = (
         f'attachment; filename="{item.original_name}"'
     )
+    response["X-Content-Type-Options"] = "nosniff"
     return response
 
 
@@ -337,12 +394,26 @@ def thumbnail_file(request, file_id):
     response["Content-Disposition"] = (
         f'inline; filename="{os.path.splitext(item.original_name)[0]}_thumb.jpg"'
     )
+    response["X-Content-Type-Options"] = "nosniff"
     return response
 
 
 # ---------------------------------------------------------------------------
 # Delete
 # ---------------------------------------------------------------------------
+
+@api_view(["GET"])
+def file_detail(request, file_id):
+    """
+    GET /files/<id>/ — trả metadata của 1 file.
+    Dùng bởi share-service để verify file tồn tại.
+    Chỉ owner mới xem được (JWT required).
+    """
+    item = StoredFile.objects.filter(id=file_id, owner_id=request.user.id).first()
+    if not item:
+        return Response(status=status.HTTP_404_NOT_FOUND)
+    return Response(StoredFileSerializer(item, context={"request": request}).data)
+
 
 @api_view(["DELETE"])
 def delete_file(request, file_id):
@@ -362,8 +433,6 @@ def delete_file(request, file_id):
     )
 
     return Response(status=status.HTTP_204_NO_CONTENT)
-
-
 # ---------------------------------------------------------------------------
 # Rename
 # ---------------------------------------------------------------------------
@@ -397,7 +466,7 @@ def rename_file(request, file_id):
 
     item.original_name = final_name
     item.save(update_fields=["original_name"])
-    return Response(StoredFileSerializer(item).data)
+    return Response(StoredFileSerializer(item, context={"request": request}).data)
 
 
 # ---------------------------------------------------------------------------
@@ -415,7 +484,7 @@ def move_file(request, file_id):
         # move to "no album"
         item.album = None
         item.save(update_fields=["album"])
-        return Response(StoredFileSerializer(item).data)
+        return Response(StoredFileSerializer(item, context={"request": request}).data)
 
     try:
         album = Album.objects.get(id=int(album_id_raw), owner_id=request.user.id)
@@ -427,7 +496,46 @@ def move_file(request, file_id):
 
     item.album = album
     item.save(update_fields=["album"])
-    return Response(StoredFileSerializer(item).data)
+    return Response(StoredFileSerializer(item, context={"request": request}).data)
+
+
+# ---------------------------------------------------------------------------
+# Public file serving
+# ---------------------------------------------------------------------------
+
+@api_view(["GET"])
+@permission_classes([permissions.AllowAny])
+def public_file(request, blob_name):
+    item = StoredFile.objects.filter(blob_name=blob_name).first()
+    if not item:
+        return Response(status=status.HTTP_404_NOT_FOUND)
+
+    download = str(request.query_params.get("download", "")).lower() in {"1", "true", "yes"}
+    content_type = _content_type(item)
+
+    if settings.AZURE_STORAGE_CONNECTION_STRING:
+        response = StreamingHttpResponse(iter_blob(item.blob_name), content_type=content_type)
+    else:
+        try:
+            file_handle = open_blob(item.blob_name)
+        except FileNotFoundError:
+            return Response(status=status.HTTP_404_NOT_FOUND)
+        response = FileResponse(file_handle, content_type=content_type)
+
+    disposition = "attachment" if download else "inline"
+    response["Content-Disposition"] = f'{disposition}; filename="{item.original_name}"'
+    response["Content-Type"] = content_type
+    response["X-Content-Type-Options"] = "nosniff"
+    return response
+
+
+@api_view(["GET"])
+@permission_classes([permissions.AllowAny])
+def public_file_meta(request, file_id):
+    item = StoredFile.objects.filter(id=file_id).first()
+    if not item:
+        return Response(status=status.HTTP_404_NOT_FOUND)
+    return Response(_public_file_payload(item, request))
 
 
 # ---------------------------------------------------------------------------

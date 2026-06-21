@@ -1,4 +1,5 @@
 #!/bin/sh
-python manage.py migrate
+set -e
+python manage.py migrate --noinput
 python manage.py collectstatic --noinput
-gunicorn auth_service.wsgi:application --bind 0.0.0.0:${PORT:-8000}
+gunicorn auth_service.wsgi:application --bind 0.0.0.0:${PORT:-8000} --workers 2 --timeout 120

@@ -10,6 +10,7 @@ class ShareLink(models.Model):
     token = models.UUIDField(default=uuid.uuid4, unique=True, editable=False)
     file_id = models.PositiveIntegerField(db_index=True)
     owner_id = models.PositiveIntegerField(db_index=True)
+    file_metadata = models.JSONField(default=dict, blank=True)
     is_active = models.BooleanField(default=True, db_index=True)
     created_at = models.DateTimeField(auto_now_add=True, db_index=True)
     expires_at = models.DateTimeField(null=True, blank=True, db_index=True)

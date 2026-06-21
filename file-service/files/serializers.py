@@ -1,4 +1,5 @@
 from rest_framework import serializers
+from django.urls import reverse
 
 from .models import Album, StoredFile
 
@@ -22,6 +23,8 @@ class StoredFileSerializer(serializers.ModelSerializer):
         required=False,
         allow_null=True,
     )
+    url = serializers.SerializerMethodField()
+    download_url = serializers.SerializerMethodField()
 
     class Meta:
         model = StoredFile
@@ -35,6 +38,8 @@ class StoredFileSerializer(serializers.ModelSerializer):
             "size",
             "created_at",
             "album_id",
+            "url",
+            "download_url",
         ]
         read_only_fields = [
             "id",
@@ -44,4 +49,23 @@ class StoredFileSerializer(serializers.ModelSerializer):
             "content_type",
             "size",
             "created_at",
+            "url",
+            "download_url",
         ]
+
+    def _public_path(self, obj) -> str:
+        return reverse("public-file", kwargs={"blob_name": obj.blob_name})
+
+    def get_url(self, obj):
+        request = self.context.get("request")
+        path = self._public_path(obj)
+        if request is not None:
+            return request.build_absolute_uri(path)
+        return path
+
+    def get_download_url(self, obj):
+        request = self.context.get("request")
+        path = f"{self._public_path(obj)}?download=1"
+        if request is not None:
+            return request.build_absolute_uri(path)
+        return path

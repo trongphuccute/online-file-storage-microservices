@@ -63,13 +63,8 @@ WSGI_APPLICATION = "share_service.wsgi.application"
 
 DATABASES = {
     "default": {
-        "ENGINE": "django.db.backends.postgresql",
-        "NAME": os.getenv("SHARE_POSTGRES_DB", "share_service"),
-        "USER": os.getenv("POSTGRES_USER", "postgres"),
-        "PASSWORD": os.getenv("POSTGRES_PASSWORD", "postgres"),
-        "HOST": os.getenv("SHARE_POSTGRES_HOST", "localhost"),
-        "PORT": os.getenv("POSTGRES_PORT", "5432"),
-        "OPTIONS": {"sslmode": os.getenv("POSTGRES_SSLMODE", "prefer")},
+        "ENGINE": "django.db.backends.sqlite3",
+        "NAME": BASE_DIR / "db.sqlite3",
     }
 }
 
@@ -83,7 +78,13 @@ CORS_ALLOW_ALL_ORIGINS = DEBUG and not CORS_ALLOWED_ORIGINS
 
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": (
-        "rest_framework_simplejwt.authentication.JWTAuthentication",
+        "shares.authentication.JWTAuthenticationFromPayload",
     ),
     "DEFAULT_PERMISSION_CLASSES": ("rest_framework.permissions.IsAuthenticated",),
+}
+
+# JWT — same SECRET_KEY as auth-service so tokens can be verified without DB lookup
+SIMPLE_JWT = {
+    "SIGNING_KEY": SECRET_KEY,
+    "ALGORITHM": "HS256",
 }

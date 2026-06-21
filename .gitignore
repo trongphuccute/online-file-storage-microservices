@@ -11,3 +11,18 @@ media/
 .DS_Store
 docx_extract/
 *.zip
+# Django static files
+staticfiles/
+
+# Python logs
+*.log
+
+# migration cache
+**/migrations/__pycache__/
+
+# Windows
+Thumbs.db
+
+# Build folders
+dist/
+build/

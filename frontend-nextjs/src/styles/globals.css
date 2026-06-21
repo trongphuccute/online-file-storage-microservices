@@ -1,0 +1,295 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --radius: 0.5rem;
+  --background: oklch(0.145 0.012 235);
+  --foreground: oklch(0.97 0.006 235);
+  --card: oklch(0.205 0.016 235);
+  --card-foreground: oklch(0.97 0.006 235);
+  --primary: oklch(0.76 0.14 190);
+  --primary-foreground: oklch(0.12 0.014 235);
+  --primary-glow: oklch(0.82 0.14 170);
+  --secondary: oklch(0.255 0.018 235);
+  --secondary-foreground: oklch(0.97 0.006 235);
+  --muted: oklch(0.235 0.016 235);
+  --muted-foreground: oklch(0.70 0.018 235);
+  --accent: oklch(0.72 0.16 145);
+  --accent-foreground: oklch(0.12 0.014 235);
+  --destructive: oklch(0.577 0.245 27.325);
+  --border: oklch(0.30 0.018 235);
+  --input: oklch(0.30 0.018 235);
+  --ring: oklch(0.76 0.14 190);
+  --gradient-hero: radial-gradient(ellipse 80% 60% at 50% 0%, oklch(0.76 0.14 190 / 0.18), transparent 70%);
+  --gradient-primary: linear-gradient(135deg, var(--primary), var(--accent));
+  --shadow-glow: 0 18px 45px -22px oklch(0.76 0.14 190 / 0.72);
+  --shadow-elegant: 0 30px 80px -30px oklch(0 0 0 / 0.6);
+  --purple: oklch(0.55 0.25 290);
+  --purple-mid: oklch(0.65 0.22 290);
+  --purple-glow: oklch(0.55 0.25 290 / 0.35);
+  --violet-dark: oklch(0.15 0.04 290);
+  --gradient-sidebar: linear-gradient(180deg, oklch(0.13 0.03 210) 0%, oklch(0.10 0.02 200) 100%);
+  --gradient-card-glow: radial-gradient(ellipse at top left, oklch(0.76 0.14 190 / 0.12), transparent 60%);
+  --card-glass: oklch(0.16 0.02 210 / 0.85);
+}
+
+.light {
+  --background: oklch(0.975 0.008 200);
+  --foreground: oklch(0.13 0.015 235);
+  --card: oklch(1.0 0.003 200);
+  --card-foreground: oklch(0.13 0.015 235);
+  --primary: oklch(0.52 0.14 190);
+  --primary-foreground: oklch(0.99 0.003 200);
+  --primary-glow: oklch(0.62 0.14 170);
+  --secondary: oklch(0.93 0.012 200);
+  --secondary-foreground: oklch(0.13 0.015 235);
+  --muted: oklch(0.94 0.010 200);
+  --muted-foreground: oklch(0.40 0.020 220);
+  --accent: oklch(0.50 0.15 145);
+  --accent-foreground: oklch(0.99 0.003 200);
+  --border: oklch(0.84 0.014 210);
+  --input: oklch(0.88 0.012 210);
+  --ring: oklch(0.52 0.14 190);
+  /* Richer hero glow for light mode */
+  --gradient-hero: radial-gradient(ellipse 90% 55% at 50% -5%, oklch(0.60 0.14 190 / 0.18), oklch(0.55 0.12 170 / 0.08) 45%, transparent 70%);
+  --shadow-glow: 0 12px 40px -16px oklch(0.52 0.14 190 / 0.45);
+  --shadow-elegant: 0 8px 32px -8px oklch(0.52 0.14 190 / 0.12), 0 2px 8px -2px oklch(0 0 0 / 0.06);
+  /* Light mode card glass — soft white with teal tint */
+  --card-glass: oklch(0.99 0.006 200 / 0.90);
+  --gradient-card-glow: radial-gradient(ellipse at top left, oklch(0.60 0.14 190 / 0.08), transparent 60%);
+}
+
+/* Global theme-switch transitions — exclude SVG elements so chart animations work */
+html, body, header, main, div, button, input, p, span, a, aside, section {
+  transition: background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease, box-shadow 0.3s ease;
+}
+
+/* Opt interactive elements out of the global transition for instant transform feedback */
+button, a, [role="button"] {
+  transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease,
+              box-shadow 0.2s ease, transform 0.15s ease, opacity 0.2s ease;
+}
+
+/* GPU promotion hints for elements that animate frequently */
+.will-change-transform {
+  will-change: transform;
+}
+.will-change-opacity {
+  will-change: opacity;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  border-color: var(--border);
+}
+
+html {
+  scroll-behavior: smooth;
+  scroll-padding-top: 80px;
+}
+
+html,
+body {
+  background-color: var(--background);
+  color: var(--foreground);
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  min-height: 100vh;
+}
+
+::selection {
+  background: oklch(0.76 0.14 190 / 0.3);
+  color: var(--foreground);
+}
+
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--muted-foreground);
+}
+
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus {
+  -webkit-text-fill-color: var(--foreground);
+  -webkit-box-shadow: 0 0 0 1000px var(--card) inset;
+  transition: background-color 5000s ease-in-out 0s;
+}
+
+.shadow-elegant {
+  box-shadow: var(--shadow-elegant);
+}
+
+.shadow-glow {
+  box-shadow: var(--shadow-glow);
+}
+
+.gradient-text {
+  background: var(--gradient-primary);
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.surface {
+  border: 1px solid var(--border);
+  background: color-mix(in oklch, var(--card) 82%, transparent);
+  backdrop-filter: blur(18px);
+  transition: box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+/* Light mode surface: crisper white, soft shadow instead of blur on transparent */
+.light .surface {
+  background: oklch(1.0 0.003 200 / 0.95);
+  backdrop-filter: blur(8px);
+  box-shadow: var(--shadow-elegant);
+}
+
+/* Slow ambient background gradient animation */
+@keyframes ambient-drift {
+  0%   { background-position: 0% 50%; }
+  50%  { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+/* Light mode page background — soft animated teal-white gradient */
+.light body {
+  background-image: linear-gradient(
+    135deg,
+    oklch(0.975 0.008 200) 0%,
+    oklch(0.985 0.005 180) 30%,
+    oklch(0.975 0.010 200) 60%,
+    oklch(0.980 0.006 220) 100%
+  );
+  background-size: 400% 400%;
+  animation: ambient-drift 12s ease infinite;
+}
+
+/* Hero badge text in light mode — not white on white */
+.light .hero-badge {
+  background: oklch(0.52 0.14 190 / 0.10);
+  border-color: oklch(0.52 0.14 190 / 0.25);
+  color: oklch(0.35 0.12 190);
+}
+
+/* Hero stat bar in light mode */
+.light .hero-stat-bar {
+  background: oklch(0.52 0.14 190 / 0.08);
+  border-color: oklch(0.52 0.14 190 / 0.18);
+}
+
+.light .hero-stat-val  { color: oklch(0.20 0.014 235); }
+.light .hero-stat-label { color: oklch(0.45 0.018 210); }
+
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+@keyframes toast-slide-in {
+  from {
+    opacity: 0;
+    transform: translateX(calc(100% + 1rem));
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes toast-slide-out {
+  from {
+    opacity: 1;
+    transform: translateX(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateX(calc(100% + 1rem));
+  }
+}
+
+@keyframes toast-progress {
+  from {
+    width: 100%;
+  }
+  to {
+    width: 0%;
+  }
+}
+
+@keyframes pulse-glow {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.6; }
+}
+
+@keyframes slide-up {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes fade-in-up {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Used by SVG bar chart bars: grows from bottom */
+@keyframes bar-grow {
+  from { transform: scaleY(0); }
+  to   { transform: scaleY(1); }
+}
+
+.animate-fade-in {
+  animation: fade-in 0.4s ease forwards;
+}
+
+.animate-fade-in-up {
+  animation: fade-in-up 0.45s ease forwards;
+}
+
+/* Staggered children — apply to a wrapper, children get nth-child delays */
+.stagger-children > *:nth-child(1) { animation-delay: 0ms; }
+.stagger-children > *:nth-child(2) { animation-delay: 60ms; }
+.stagger-children > *:nth-child(3) { animation-delay: 120ms; }
+.stagger-children > *:nth-child(4) { animation-delay: 180ms; }
+.stagger-children > *:nth-child(5) { animation-delay: 240ms; }
+.stagger-children > *:nth-child(6) { animation-delay: 300ms; }
+
+.toast-in {
+  animation: toast-slide-in 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+.toast-out {
+  animation: toast-slide-out 0.25s ease-in forwards;
+}
+
+.toast-progress {
+  animation: toast-progress linear forwards;
+}
