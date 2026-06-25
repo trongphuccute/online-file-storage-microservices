@@ -1,0 +1,34 @@
+name: Deploy CloudVault Services
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+
+  deploy-file:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Deploy File Service
+        uses: azure/webapps-deploy@v2
+        with:
+          app-name: cv-file-new
+          publish-profile: ${{ secrets.AZURE_FILE_PUBLISH_PROFILE }}
+          package: ./file-service
+
+
+  deploy-share:
+    runs-on: ubuntu-latest
+    needs: deploy-file
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Deploy Share Service
+        uses: azure/webapps-deploy@v2
+        with:
+          app-name: cv-share-new
+          publish-profile: ${{ secrets.AZURE_SHARE_PUBLISH_PROFILE }}
+          package: ./share-service
