@@ -10,9 +10,9 @@ load_dotenv(BASE_DIR.parent / ".env")
 SECRET_KEY = os.getenv("DJANGO_SECRET_KEY", "dev-secret-key")
 DEBUG = os.getenv("DJANGO_DEBUG", "1") == "1"
 ALLOWED_HOSTS = ["*"]
-CORS_ALLOW_ALL_ORIGINS = True
+
 CSRF_TRUSTED_ORIGINS = [
-    "https://online-file-storage-microservices-gamma.vercel.app/"
+    "https://online-file-storage-microservices-gamma.vercel.app"
 ]
 
 INSTALLED_APPS = [
