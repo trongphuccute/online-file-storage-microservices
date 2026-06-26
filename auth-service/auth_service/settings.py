@@ -10,15 +10,22 @@ load_dotenv(BASE_DIR.parent / ".env")
 SECRET_KEY = os.getenv("DJANGO_SECRET_KEY", "dev-secret-key")
 DEBUG = os.getenv("DJANGO_DEBUG", "1") == "1"
 ALLOWED_HOSTS = ["*"]
-CORS_ALLOW_ALL_ORIGINS = True
 
+# ── CORS — allow ALL origins so any frontend (Vercel, localhost) can call us ──
+# CORS_ALLOW_ALL_ORIGINS=True takes full precedence; CORS_ALLOWED_ORIGINS is
+# intentionally NOT set here so it cannot accidentally override the allow-all flag.
+CORS_ALLOW_ALL_ORIGINS = True
 CORS_ALLOW_CREDENTIALS = True
 
-
-CORS_ALLOW_HEADERS = [
-    "authorization",
-    "content-type",
-    "*",
+# Use the complete default header set from django-cors-headers plus our extras.
+# Do NOT put "*" as a list item — it is not treated as a wildcard there.
+from corsheaders.defaults import default_headers  # noqa: E402
+CORS_ALLOW_HEADERS = list(default_headers) + [
+    "x-requested-with",
+    "accept",
+    "accept-encoding",
+    "cache-control",
+    "pragma",
 ]
 
 CORS_ALLOW_METHODS = [
@@ -29,8 +36,11 @@ CORS_ALLOW_METHODS = [
     "DELETE",
     "OPTIONS",
 ]
+
 CSRF_TRUSTED_ORIGINS = [
-    "https://online-file-storage-microservices-gamma.vercel.app"
+    "https://online-file-storage-microservices-gamma.vercel.app",
+    "https://*.azurewebsites.net",
+    "https://*.vercel.app",
 ]
 
 INSTALLED_APPS = [
