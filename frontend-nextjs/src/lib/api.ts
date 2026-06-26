@@ -1,6 +1,6 @@
-const AUTH = process.env.NEXT_PUBLIC_AUTH_API_URL || "http://localhost:8001/api";
-const FILE = process.env.NEXT_PUBLIC_FILE_API_URL || "http://localhost:8002/api";
-const SHARE = process.env.NEXT_PUBLIC_SHARE_API_URL || "http://localhost:8003/api";
+const AUTH = (process.env.NEXT_PUBLIC_AUTH_API_URL || "http://localhost:8001/api").replace(/\/$/, "");
+const FILE = (process.env.NEXT_PUBLIC_FILE_API_URL || "http://localhost:8002/api").replace(/\/$/, "");
+const SHARE = (process.env.NEXT_PUBLIC_SHARE_API_URL || "http://localhost:8003/api").replace(/\/$/, "");
 
 const TOKEN_KEY = "cloudvault_token";
 const REFRESH_KEY = "cloudvault_refresh";
@@ -30,7 +30,10 @@ async function request<T = any>(
   const token = tokenStore.get();
   if (token) headers.set("Authorization", `Bearer ${token}`);
 
-  const res = await fetch(`${base}${path}`, { ...opts, headers });
+  // Normalise: strip trailing slash from base, ensure path starts with /
+  const url = `${base.replace(/\/$/, "")}/${path.replace(/^\//, "")}`;
+
+  const res = await fetch(url, { ...opts, headers });
   if (!res.ok) {
     if (res.status === 401 && !path.includes("/auth/login/")) {
       tokenStore.clear();
@@ -161,7 +164,7 @@ export const fileApi = {
       ? `/files/${file.id}/thumbnail/`
       : `/files/${file.id}/download/`;
 
-    let res = await fetch(`${FILE}${preferredPath}`, { headers });
+    let res = await fetch(`${FILE}/${preferredPath.replace(/^\//, "")}`, { headers });
     if (!res.ok && file.thumb_name) {
       res = await fetch(`${FILE}/files/${file.id}/download/`, { headers });
     }
