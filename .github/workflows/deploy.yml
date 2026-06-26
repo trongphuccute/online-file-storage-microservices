@@ -17,7 +17,7 @@ jobs:
         with:
           app-name: cv-file-new
           publish-profile: ${{ secrets.AZURE_FILE_PUBLISH_PROFILE }}
-          package: ./file-service
+          package: file-service
 
 
   deploy-share:
@@ -31,4 +31,4 @@ jobs:
         with:
           app-name: cv-share-new
           publish-profile: ${{ secrets.AZURE_SHARE_PUBLISH_PROFILE }}
-          package: ./share-service
+          package: share-service
