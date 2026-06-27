@@ -7,7 +7,7 @@ from dotenv import load_dotenv
 BASE_DIR = Path(__file__).resolve().parent.parent
 load_dotenv(BASE_DIR.parent / ".env")
 
-SECRET_KEY = os.getenv("DJANGO_SECRET_KEY", "dev-secret-key")
+SECRET_KEY = os.environ["DJANGO_SECRET_KEY"]  # must be set — same value across all 3 services
 DEBUG = os.getenv("DJANGO_DEBUG", "1") == "1"
 ALLOWED_HOSTS = ["*"]
 
@@ -91,7 +91,10 @@ WSGI_APPLICATION = "auth_service.wsgi.application"
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.sqlite3",
-        "NAME": BASE_DIR / "db.sqlite3",
+        # Azure App Service: /home is the only persistent mount.
+        # BASE_DIR resolves to /home/site/wwwroot on App Service, but using
+        # the explicit path removes any ambiguity across deployments.
+        "NAME": "/home/site/wwwroot/db_auth.sqlite3",
     }
 }
 
